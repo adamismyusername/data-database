@@ -20,7 +20,7 @@ def fetch_bls_data(series_id):
     data = {
         "seriesid": [series_id],
         "registrationkey": api_key,
-        "startyear": "2023",  # Add explicit years
+        "startyear": "2023",
         "endyear": "2024"
     }
     
@@ -32,7 +32,7 @@ def fetch_bls_data(series_id):
         raise Exception(f"BLS API failed: {result.get('message', 'Unknown error')}")
     
     # Parse the latest values
-    series_data = data['Results']['series'][0]['data']
+    series_data = result['Results']['series'][0]['data']
     
     # Get high, low, average from recent periods
     values = [float(d['value']) for d in series_data[:12]]  # Last 12 periods
@@ -69,5 +69,4 @@ if __name__ == "__main__":
     gas = fetch_bls_data("APU0000708111")
     store_data("gas_price", gas["high"], gas["low"], gas["average"], gas["raw"])
     
-
     print("Done fetching BLS data")
