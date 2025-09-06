@@ -9,17 +9,14 @@ key = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
 def fetch_bls_data(series_id):
-    """Fetch data from BLS API"""
-    api_key = os.environ.get("BLS_API_KEY")
+    """Fetch data from BLS API v1 - no key needed"""
     
-    # BLS API v2 endpoint
-    url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
+    # BLS API v1 endpoint - NO KEY REQUIRED
+    url = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
     
-    # BLS expects this exact structure
     headers = {'Content-type': 'application/json'}
     data = {
         "seriesid": [series_id],
-        "registrationkey": api_key,
         "startyear": "2023",
         "endyear": "2024"
     }
@@ -28,7 +25,7 @@ def fetch_bls_data(series_id):
     result = response.json()
     
     if result['status'] != 'REQUEST_SUCCEEDED':
-        print(f"Full API response: {result}")  # Debug line
+        print(f"Full API response: {result}")
         raise Exception(f"BLS API failed: {result.get('message', 'Unknown error')}")
     
     # Parse the latest values
