@@ -6,6 +6,7 @@ from supabase import create_client, Client
 # Initialize Supabase
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
+metals_api_key = os.environ.get("METALS_API_KEY")
 supabase: Client = create_client(url, key)
 
 def fetch_latest_bls(series_id):
@@ -33,8 +34,36 @@ def fetch_latest_bls(series_id):
     series_data = result['Results']['series'][0]['data']
     return series_data
 
-def update_or_insert(data_type, series_data):
-    """Check each data point and insert if new"""
+def fetch_metal_price(metal):
+    """Get current spot price for gold or silver"""
+    
+    if not metals_api_key:
+        print(f"No METALS_API_KEY found, skipping {metal}")
+        return None
+    
+    url = f"https://api.metals.dev/v1/metal/spot"
+    params = {
+        'api_key': metals_api_key,
+        'metal': metal,
+        'currency': 'USD'
+    }
+    headers = {'Accept': 'application/json'}
+    
+    try:
+        response = requests.get(url, params=params, headers=headers)
+        result = response.json()
+        
+        if result.get('status') != 'success':
+            print(f"Metals API failed for {metal}: {result.get('message', 'Unknown error')}")
+            return None
+        
+        return result
+    except Exception as e:
+        print(f"Error fetching {metal} price: {e}")
+        return None
+
+def update_or_insert_bls(data_type, series_data):
+    """Check each BLS data point and insert if new"""
     
     if not series_data:
         print(f"No data for {data_type}")
@@ -88,13 +117,54 @@ def update_or_insert(data_type, series_data):
     else:
         print(f"{data_type}: {inserted_count} new, {updated_count} updated")
 
+def update_metal_price(metal, metal_data):
+    """Insert or update metal spot price"""
+    
+    if not metal_data:
+        print(f"No data for {metal}")
+        return
+    
+    rate = metal_data['rate']
+    # Use current timestamp from API response, but just the date part
+    timestamp = metal_data['timestamp']
+    date_str = timestamp.split('T')[0]  # Get just YYYY-MM-DD
+    
+    # Check if today's price already exists
+    existing = supabase.table('market_data').select("*").eq(
+        'data_type', metal
+    ).eq('date', date_str).execute()
+    
+    if existing.data:
+        # Update with latest price
+        supabase.table('market_data').update({
+            'average': rate['price'],
+            'high': rate['high'],
+            'low': rate['low'],
+            'raw_data': metal_data
+        }).eq('id', existing.data[0]['id']).execute()
+        print(f"Updated {metal} for {date_str}: ${rate['price']}")
+    else:
+        # Insert new price
+        supabase.table('market_data').insert({
+            'data_type': metal,
+            'date': date_str,
+            'average': rate['price'],
+            'high': rate['high'],
+            'low': rate['low'],
+            'raw_data': metal_data
+        }).execute()
+        print(f"Inserted {metal} for {date_str}: ${rate['price']}")
+
 if __name__ == "__main__":
-    # Update CPI
+    # Update CPI (monthly data)
     cpi_data = fetch_latest_bls("CUUR0000SA0")
-    update_or_insert("cpi", cpi_data)
+    update_or_insert_bls("cpi", cpi_data)
     
-    # If you want to add more series later:
-    # gas_data = fetch_latest_bls("APU0000708111")
-    # update_or_insert("gas_price", gas_data)
+    # Update metal prices (daily data)
+    gold_data = fetch_metal_price("gold")
+    update_metal_price("gold", gold_data)
     
-    print("BLS data check complete")
+    silver_data = fetch_metal_price("silver")
+    update_metal_price("silver", silver_data)
+    
+    print("Market data update complete")
