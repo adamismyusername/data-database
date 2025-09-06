@@ -58,21 +58,12 @@ def store_data(data_type, high, low, average, raw_data=None):
         raise
 
 if __name__ == "__main__":
-    # Common BLS series IDs
-    # CUUR0000SA0 - CPI All Urban Consumers
-    # LNS14000000 - Unemployment Rate
-    # CES0000000001 - Total Nonfarm Employment
-    
-    # Fetch unemployment rate
-    unemployment = fetch_bls_data("LNS14000000")
-    store_data("unemployment_rate", 
-               unemployment["high"], 
-               unemployment["low"], 
-               unemployment["average"], 
-               unemployment["raw"])
-    
     # Fetch CPI (inflation indicator)
     cpi = fetch_bls_data("CUUR0000SA0")
     store_data("cpi", cpi["high"], cpi["low"], cpi["average"], cpi["raw"])
+    
+    # Fetch gas prices
+    gas = fetch_bls_data("APU0000708111")
+    store_data("gas_price", gas["high"], gas["low"], gas["average"], gas["raw"])
     
     print("Done fetching BLS data")
