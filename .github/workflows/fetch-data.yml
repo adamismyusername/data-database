@@ -27,6 +27,6 @@ jobs:
       env:
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        METALS_API_KEY: ${{ secrets.METALS_API_KEY }}
       run: |
-
         python scripts/fetch_data.py
