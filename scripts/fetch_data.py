@@ -12,21 +12,24 @@ def fetch_bls_data(series_id):
     """Fetch data from BLS API"""
     api_key = os.environ.get("BLS_API_KEY")
     
-    # BLS API v2 endpoint (with registration key)
+    # BLS API v2 endpoint
     url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
     
-    # Get latest data
-    params = {
+    # BLS expects this exact structure
+    headers = {'Content-type': 'application/json'}
+    data = {
         "seriesid": [series_id],
         "registrationkey": api_key,
-        "latest": "true"  # Just get recent data
+        "startyear": "2023",  # Add explicit years
+        "endyear": "2024"
     }
     
-    response = requests.post(url, json=params)
-    data = response.json()
+    response = requests.post(url, json=data, headers=headers)
+    result = response.json()
     
-    if data['status'] != 'REQUEST_SUCCEEDED':
-        raise Exception(f"BLS API failed: {data.get('message', 'Unknown error')}")
+    if result['status'] != 'REQUEST_SUCCEEDED':
+        print(f"Full API response: {result}")  # Debug line
+        raise Exception(f"BLS API failed: {result.get('message', 'Unknown error')}")
     
     # Parse the latest values
     series_data = data['Results']['series'][0]['data']
@@ -66,4 +69,5 @@ if __name__ == "__main__":
     gas = fetch_bls_data("APU0000708111")
     store_data("gas_price", gas["high"], gas["low"], gas["average"], gas["raw"])
     
+
     print("Done fetching BLS data")
