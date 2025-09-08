@@ -2,9 +2,9 @@ name: Fetch Market Data
 
 on:
   schedule:
-    # Runs at 9 AM and 4 PM EST (adjust for your timezone)
-    - cron: '0 14 * * *'  # 2 PM UTC = 9 AM EST
-    - cron: '0 21 * * *'  # 9 PM UTC = 4 PM EST
+    # Runs at 9 AM and 4 PM PST
+    - cron: '0 17 * * *'  # 5 PM UTC = 9 AM PST
+    - cron: '0 0 * * *'   # Midnight UTC = 4 PM PST
   workflow_dispatch:  # Lets you trigger manually for testing
 
 jobs:
@@ -30,3 +30,4 @@ jobs:
         METALS_API_KEY: ${{ secrets.METALS_API_KEY }}
       run: |
         python scripts/fetch_data.py
+
